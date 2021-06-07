@@ -1,7 +1,7 @@
 var http = require('http')
 var fs = require('fs')
 var template = require('art-template')
-var tem
+var url = require('url')
 
 var comments = [
     {
@@ -48,9 +48,9 @@ var comments = [
 
 http
     .createServer(function (req, res) {
-        var url = req.url
-        console.log(url, 9999);
-        if (url === '/') {
+        var parseObj = url.parse(req.url, true)
+        var parseName = parseObj.pathname  // 不包含？ 之后的内容
+        if (parseName === '/') {
             fs.readFile('./views/app.html', function(err, data) {
                 if (err) {
                     return res.end('404')
@@ -60,8 +60,8 @@ http
                 })
                 res.end(htmlStr)
             })
-        } else if (url.indexOf('/public/') === 0) {
-            fs.readFile('.' + url, function(err, data) {
+        } else if (parseName.indexOf('/public/') === 0) {
+            fs.readFile('.' + parseName, function(err, data) {
                 if (err) {
                     return res.end('404999')
                     
@@ -69,13 +69,25 @@ http
                 res.end(data)
             })
 
-        } else if (url === '/post'){
+        } else if (parseName === '/post'){
             fs.readFile('./views/post.html', function(err ,data) {
                 if (err) {
                     return res.end('404')
                 }
+
                 res.end(data)
             })
+        }else if(parseName === '/pinglun') {
+            console.log('收到请求了',parseObj.query)
+            let obj = parseObj.query
+            obj.dataTme = 'new Data()'
+            comments.unshift(obj)
+            //    服务端跳转
+            // 1.状态码302   Location告诉客户端
+            res.statusCode = 302
+            res.setHeader('Location', '/')
+            res.end()
+
         } else{
             fs.readFile('./views/404.html', function(err ,data) {
                 if (err) {
